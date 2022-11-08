@@ -1,0 +1,43 @@
+Parameters:
+  InstanceType:
+    Description: WebServer EC2 instance type
+    Type: String
+    Default: t2.micro
+    AllowedValues:
+      - t1.micro
+      - t2.nano
+      - t2.micro
+    ConstraintDescription: must be a valid EC2 instance type.
+
+  KeyName:
+    Description: Name of an existing EC2 KeyPair to enable SSH access to the instance
+    Type: 'AWS::EC2::KeyPair::KeyName'
+    ConstraintDescription: must be the name of an existing EC2 KeyPair.
+
+  AmazonImageID:
+    Description: The ID of the Amazon machine image (AMI)
+    Type: String
+
+Resources:
+  EC2Instance1:
+    Type: AWS::EC2::Instance
+    Properties:
+      InstanceType: !Ref InstanceType
+      SubnetId:
+        Fn::ImportValue: !Sub ${ExportVpcStackName}-PrivateSubnet1
+      SecurityGroupIds:
+        - Fn::ImportValue: !Sub ${ExportVpcStackName}-WebServerSecurityGroup
+      KeyName: !Ref KeyName
+      ImageId: !Ref AmazonImageID 
+      Tags:
+        - Key: Name
+          Value: EC2 | Private Subnet 1
+      UserData:
+        Fn::Base64:
+          !Sub |
+            #!/bin/bash -xe
+            sudo su
+            yum update -y
+            yum install -y httpd
+            echo "Healthy" > /var/www/html/index.html
+            service httpd start
